@@ -26,6 +26,6 @@ li {
 
 li.visited {
   background: #d2f5d2;
-  text-decoration: none;
+  text-decoration: line-none;
 }  
 
