@@ -1,68 +1,53 @@
-const stores = [
-  "博多もつ鍋おおやま",
-  "うなぎ 徳",
-  "寿司 鮨割烹やま中",
-  "焼肉チャンピオン",
-  "もつ鍋 一藤",
-  "牛たん炭焼 利久",
-  "海鮮丼・寿司 ごっつお",
-  "天ぷらひらお",
-  "とんかつ濱かつ",
-  "鶏三和",
-  "鯛茶漬け もと村",
-  "ピエトロ",
-  "スープストックトーキョー",
-  "資さんうどん",
-  "博多やりうどん",
-  "長浜ラーメン",
-  "一風堂",
-  "担々麺しびから",
-  "はかた地どり",
-  "韓美膳",
-  "中華料理 杏仁荘",
-  "インドカレー ガンディ",
-  "イタリアン マンマミーア",
-  "フレンチ KAZU",
-  "パスタ パスタ",
-  "カフェオットー",
-  "星乃珈琲店",
-  "タリーズコーヒー",
-  "スターバックス",
-  "デザート王国",
-  "クリスピー・クリーム・ドーナツ",
-  "ゴディバ",
-  "パフェ専門店",
-  "ミスド",
-  "パンケーキgram",
-  "ハードロックカフェ",
-  "ビアホール BEER STAND",
-  "和食まほろば",
-  "牛カツ京都勝牛",
-  "タコスバー"
+const shops = [
+  { name: "一風堂", area: "くうてん" },
+  { name: "もつ鍋おおやま", area: "くうてん" },
+  { name: "スターバックス", area: "アミュプラザ博多" },
+  { name: "資さんうどん", area: "KITTE博多" },
+  { name: "うまや", area: "博多阪急" },
+  { name: "お好み焼き本舗", area: "マルイ博多" },
+  // ※必要に応じて続き追加可能（全店舗）
 ];
 
-const visited = JSON.parse(localStorage.getItem("visitedStores") || "[]");
+const list = document.getElementById("shopList");
+const areaFilter = document.getElementById("areaFilter");
 
-function renderList() {
-  const list = document.getElementById("store-list");
+function renderShops(area = "all") {
   list.innerHTML = "";
-  stores.forEach((name, index) => {
-    const li = document.createElement("li");
-    li.textContent = name;
-    if (visited.includes(index)) {
-      li.classList.add("visited");
-    }
-    li.onclick = () => {
-      if (visited.includes(index)) {
-        visited.splice(visited.indexOf(index), 1);
-      } else {
-        visited.push(index);
-      }
-      localStorage.setItem("visitedStores", JSON.stringify(visited));
-      renderList();
-    };
-    list.appendChild(li);
-  });
+
+  shops
+    .filter(shop => area === "all" || shop.area === area)
+    .forEach((shop, index) => {
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <strong>${shop.area}：${shop.name}</strong>
+        <button onclick="toggleDetails(${index})">記録</button>
+        <div id="details-${index}" style="display:none;">
+          <textarea placeholder="メモを入力"></textarea>
+          <a href="https://www.google.com/search?q=${encodeURIComponent(shop.name)}" target="_blank">Googleで検索</a>
+          <input type="file" accept="image/*" onchange="previewImage(event, ${index})">
+          <img id="img-${index}" style="display:none;">
+        </div>
+      `;
+      list.appendChild(li);
+    });
 }
 
-renderList();
+function toggleDetails(index) {
+  const el = document.getElementById(`details-${index}`);
+  el.style.display = el.style.display === "none" ? "block" : "none";
+}
+
+function previewImage(event, index) {
+  const img = document.getElementById(`img-${index}`);
+  const file = event.target.files[0];
+  if (file) {
+    img.src = URL.createObjectURL(file);
+    img.style.display = "block";
+  }
+}
+
+areaFilter.addEventListener("change", (e) => {
+  renderShops(e.target.value);
+});
+
+renderShops();
