@@ -1,76 +1,57 @@
 body {
   font-family: sans-serif;
-  padding: 1rem;
-  background: #f7f7f7;
+  padding: 1em;
+  background: #f9f9f9;
 }
 
 h1 {
   text-align: center;
-  margin-bottom: 1rem;
 }
 
-#store-list {
+.filters {
+  margin: 1em 0;
+  text-align: center;
+}
+
+#shopList {
   list-style: none;
   padding: 0;
 }
 
-li {
+.shop-item {
   background: #fff;
-  padding: 1rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1em;
+  padding: 1em;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  cursor: pointer;
-  transition: background 0.2s;
 }
 
-li.visited {
-  background: #d2f5d2;body {
-  font-family: sans-serif;
-  padding: 1rem;
-  background: #f7f7f7;
+.shop-item.visited {
+  background: #e0ffe0;
 }
 
-h1 {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-  text-align: center;
+.memo-area {
+  margin-top: 1em;
 }
 
-select {
-  display: block;
-  margin: 0 auto 1rem;
-  padding: 0.5rem;
-  font-size: 1rem;
-}
-
-ul {
-  list-style: none;
-  padding: 0;
-}
-
-li {
-  background: white;
-  margin-bottom: 0.5rem;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 0 5px rgba(0,0,0,0.1);
-}
-
-button {
-  margin-top: 0.5rem;
-}
-
-textarea, input[type="file"] {
-  display: block;
-  margin-top: 0.5rem;
+.memo-area textarea {
   width: 100%;
+  height: 4em;
 }
 
-img {
+.memo-area img {
   max-width: 100%;
-  margin-top: 0.5rem;
+  margin-top: 0.5em;
+  display: block;
 }
 
-  text-decoration: line-through;
+button.delete-photo {
+  display: inline-block;
+  margin-top: 0.3em;
+  background: #f66;
+  color: #fff;
+  border: none;
+  padding: 0.3em 0.6em;
+  border-radius: 4px;
+  cursor: pointer;
 }

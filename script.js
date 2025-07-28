@@ -1,53 +1,72 @@
-const shops = [
-  { name: "一風堂", area: "くうてん" },
-  { name: "もつ鍋おおやま", area: "くうてん" },
-  { name: "スターバックス", area: "アミュプラザ博多" },
-  { name: "資さんうどん", area: "KITTE博多" },
-  { name: "うまや", area: "博多阪急" },
-  { name: "お好み焼き本舗", area: "マルイ博多" },
-  // ※必要に応じて続き追加可能（全店舗）
+const shopData = [
+  { name: "一風堂", building: "くうてん" },
+  { name: "ハカタホタル", building: "くうてん" },
+  { name: "シアトルズベストコーヒー", building: "アミュプラザ" },
+  { name: "キャンベルアーリー", building: "アミュプラザ" },
+  { name: "くまもと酒場", building: "KITTE" },
+  { name: "鶴乃家", building: "博多阪急" },
+  { name: "ワイアードカフェ", building: "マルイ" }
+  // 追加店舗はここにどんどん増やせます
 ];
 
-const list = document.getElementById("shopList");
-const areaFilter = document.getElementById("areaFilter");
+const shopList = document.getElementById("shopList");
+const buildingFilter = document.getElementById("buildingFilter");
 
-function renderShops(area = "all") {
-  list.innerHTML = "";
+function renderShops() {
+  shopList.innerHTML = "";
+  const selectedBuilding = buildingFilter.value;
 
-  shops
-    .filter(shop => area === "all" || shop.area === area)
-    .forEach((shop, index) => {
-      const li = document.createElement("li");
-      li.innerHTML = `
-        <strong>${shop.area}：${shop.name}</strong>
-        <button onclick="toggleDetails(${index})">記録</button>
-        <div id="details-${index}" style="display:none;">
-          <textarea placeholder="メモを入力"></textarea>
-          <a href="https://www.google.com/search?q=${encodeURIComponent(shop.name)}" target="_blank">Googleで検索</a>
-          <input type="file" accept="image/*" onchange="previewImage(event, ${index})">
-          <img id="img-${index}" style="display:none;">
+  shopData.forEach(shop => {
+    if (selectedBuilding !== "all" && shop.building !== selectedBuilding) return;
+
+    const li = document.createElement("li");
+    li.className = "shop-item";
+    li.innerHTML = `
+      <strong>${shop.building}・${shop.name}</strong>
+      <button onclick="toggleVisited(this)">✔ 行った</button>
+      <div class="memo-area" style="display:none">
+        <textarea placeholder="メモを記入…"></textarea>
+        <div>
+          <input type="file" accept="image/*" onchange="showPhoto(this)">
+          <div class="photo-container"></div>
         </div>
-      `;
-      list.appendChild(li);
+        <a href="https://www.google.com/search?q=${encodeURIComponent(shop.name)}" target="_blank">🔍 Googleで検索</a>
+      </div>
+    `;
+    li.querySelector("strong").addEventListener("click", () => {
+      const memo = li.querySelector(".memo-area");
+      memo.style.display = memo.style.display === "none" ? "block" : "none";
     });
+    shopList.appendChild(li);
+  });
 }
 
-function toggleDetails(index) {
-  const el = document.getElementById(`details-${index}`);
-  el.style.display = el.style.display === "none" ? "block" : "none";
+function toggleVisited(button) {
+  const li = button.closest(".shop-item");
+  li.classList.toggle("visited");
 }
 
-function previewImage(event, index) {
-  const img = document.getElementById(`img-${index}`);
-  const file = event.target.files[0];
-  if (file) {
-    img.src = URL.createObjectURL(file);
-    img.style.display = "block";
-  }
+function showPhoto(input) {
+  const container = input.parentElement.querySelector(".photo-container");
+  container.innerHTML = "";
+
+  const file = input.files[0];
+  if (!file) return;
+
+  const img = document.createElement("img");
+  img.src = URL.createObjectURL(file);
+
+  const delBtn = document.createElement("button");
+  delBtn.textContent = "写真を削除";
+  delBtn.className = "delete-photo";
+  delBtn.onclick = () => {
+    input.value = "";
+    container.innerHTML = "";
+  };
+
+  container.appendChild(img);
+  container.appendChild(delBtn);
 }
 
-areaFilter.addEventListener("change", (e) => {
-  renderShops(e.target.value);
-});
-
+buildingFilter.addEventListener("change", renderShops);
 renderShops();
