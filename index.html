@@ -1,24 +1,40 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>博多駅エリア来店記録</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <h1>博多駅エリア来店記録</h1>
-  <div class="filters">
-    <select id="buildingFilter">
-      <option value="all">全ての建物</option>
+
+  <div id="filter">
+    <label for="building">建物:</label>
+    <select id="building">
+      <option value="all">すべて</option>
       <option value="くうてん">くうてん</option>
-      <option value="アミュプラザ">アミュプラザ</option>
-      <option value="KITTE">KITTE</option>
+      <option value="アミュプラザ博多">アミュプラザ博多</option>
       <option value="博多阪急">博多阪急</option>
-      <option value="マルイ">マルイ</option>
+      <option value="KITTE博多">KITTE博多</option>
+      <option value="OIOI博多">OIOI博多</option>
+    </select>
+
+    <label for="floor">階数:</label>
+    <select id="floor">
+      <option value="all">すべて</option>
+      <option value="B1">B1</option>
+      <option value="1F">1F</option>
+      <option value="2F">2F</option>
+      <option value="3F">3F</option>
+      <option value="4F">4F</option>
+      <option value="5F">5F</option>
+      <option value="9F">9F</option>
+      <option value="10F">10F</option>
     </select>
   </div>
-  <ul id="shopList"></ul>
+
+  <ul id="shop-list"></ul>
 
   <script src="script.js"></script>
 </body>
