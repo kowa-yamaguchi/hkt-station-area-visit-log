@@ -4,148 +4,33 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>博多駅エリア来店記録</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      margin: 0;
-      padding: 1em;
-      background: #f9f9f9;
-    }
-    h1 {
-      font-size: 1.5em;
-      margin-bottom: 1em;
-    }
-    select, input[type="text"], textarea {
-      font-size: 1em;
-      margin: 0.2em;
-    }
-    .store {
-      background: white;
-      border-radius: 8px;
-      padding: 1em;
-      margin-bottom: 1em;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    }
-    .store.visited {
-      background: #e0ffe0;
-    }
-    .store-details {
-      display: none;
-      margin-top: 0.5em;
-    }
-    .store img {
-      max-width: 100%;
-      height: auto;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <h1>博多駅エリア来店記録</h1>
-  <div>
-    <label>建物:</label>
+
+  <div class="filters">
     <select id="buildingFilter">
-      <option value="all">すべて</option>
+      <option value="">すべての建物</option>
       <option value="くうてん">くうてん</option>
-      <option value="アミュプラザ">アミュプラザ</option>
+      <option value="アミュプラザ博多">アミュプラザ博多</option>
       <option value="博多阪急">博多阪急</option>
       <option value="KITTE">KITTE</option>
-      <option value="マルイ">マルイ</option>
+      <option value="マルイ">マルイ（OIOI）</option>
     </select>
-    <label>階:</label>
+
     <select id="floorFilter">
-      <option value="all">すべて</option>
-      <option value="10F">10F</option>
-      <option value="9F">9F</option>
+      <option value="">すべての階</option>
       <option value="B1F">B1F</option>
       <option value="1F">1F</option>
-      <option value="5F">5F</option>
+      <option value="2F">2F</option>
+      <option value="9F">9F</option>
+      <option value="10F">10F</option>
     </select>
   </div>
-  <div id="storeList"></div>
 
-  <script>
-    const stores = [
-      { name: "焼肉チャンピオン", building: "くうてん", floor: "10F" },
-      { name: "銀座 天一", building: "くうてん", floor: "10F" },
-      { name: "ひょうたん寿司", building: "アミュプラザ", floor: "9F" },
-      { name: "うどん平", building: "KITTE", floor: "B1F" },
-      { name: "おむすび村", building: "マルイ", floor: "1F" },
-      { name: "博多一風堂", building: "博多阪急", floor: "5F" },
-      // 他の店舗をここに追加
-    ];
+  <ul id="shopList"></ul>
 
-    const storeList = document.getElementById("storeList");
-    const buildingFilter = document.getElementById("buildingFilter");
-    const floorFilter = document.getElementById("floorFilter");
-
-    function loadState(name) {
-      return localStorage.getItem(`visited_${name}`);
-    }
-
-    function saveState(name, memo, img) {
-      localStorage.setItem(`visited_${name}`, JSON.stringify({ memo, img }));
-    }
-
-    function renderStores() {
-      storeList.innerHTML = "";
-      stores.forEach(store => {
-        const bFilter = buildingFilter.value;
-        const fFilter = floorFilter.value;
-        if ((bFilter !== "all" && store.building !== bFilter) ||
-            (fFilter !== "all" && store.floor !== fFilter)) return;
-
-        const state = JSON.parse(loadState(store.name) || '{}');
-        const div = document.createElement("div");
-        div.className = `store ${state.memo || state.img ? "visited" : ""}`;
-        div.innerHTML = `
-          <strong>${store.floor} ${store.building}</strong><br />
-          <span>${store.name}</span><br />
-          <button onclick="toggleDetails(this)">詳細</button>
-          <div class="store-details">
-            <textarea placeholder="メモ" oninput="updateMemo('${store.name}', this.value)">${state.memo || ""}</textarea><br />
-            <a href="https://www.google.com/search?q=${encodeURIComponent(store.name)}" target="_blank">Googleで検索</a><br />
-            <input type="file" accept="image/*" onchange="saveImage(event, '${store.name}')" />
-            <div>${state.img ? `<img src="${state.img}"/><br /><button onclick="deleteImage('${store.name}')">画像を削除</button>` : ""}</div>
-          </div>
-        `;
-        storeList.appendChild(div);
-      });
-    }
-
-    function toggleDetails(btn) {
-      const div = btn.nextElementSibling;
-      div.style.display = div.style.display === "none" ? "block" : "none";
-    }
-
-    function updateMemo(name, value) {
-      const state = JSON.parse(loadState(name) || '{}');
-      state.memo = value;
-      saveState(name, state.memo, state.img);
-    }
-
-    function saveImage(event, name) {
-      const file = event.target.files[0];
-      const reader = new FileReader();
-      reader.onload = () => {
-        const state = JSON.parse(loadState(name) || '{}');
-        state.img = reader.result;
-        saveState(name, state.memo, state.img);
-        renderStores();
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function deleteImage(name) {
-      const state = JSON.parse(loadState(name) || '{}');
-      state.img = null;
-      saveState(name, state.memo, null);
-      renderStores();
-    }
-
-    buildingFilter.onchange = renderStores;
-    floorFilter.onchange = renderStores;
-
-    renderStores();
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
