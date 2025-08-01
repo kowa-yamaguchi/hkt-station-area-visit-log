@@ -1,63 +1,43 @@
 body {
   font-family: sans-serif;
+  margin: 0;
   padding: 1em;
   background: #f9f9f9;
 }
 
-h1 {
-  font-size: 1.5em;
+header {
+  text-align: center;
   margin-bottom: 1em;
 }
 
-.filters {
-  margin-bottom: 1em;
-}
-
-#storeList {
+.store-list {
   list-style: none;
   padding: 0;
 }
 
+.store-item {
+  background: #fff;
+  margin-bottom: 10px;
+  border-left: 5px solid transparent;
+  padding: 10px;
+  border-radius: 8px;
+  transition: background 0.3s, border-color 0.3s;
+}
+
 .store-item.visited {
-  background-color: #fff8d6;  /* 明るい黄色で目立つように */
+  background-color: #fff8d6;
   border-color: #f2c94c;
 }
 
+.store-item .store-name {
+  font-weight: bold;
+  font-size: 16px;
+}
+
 .store-item.visited .store-name {
-  color: #b17f00;  /* 濃い黄色系の文字 */
-  font-weight: bold;
+  color: #b17f00;
 }
 
-.store-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.store-name {
-  font-weight: bold;
-  font-size: 1.1em;
-  cursor: pointer;
-}
-
-.store-details {
-  margin-top: 0.5em;
-  display: none;
-}
-
-textarea {
-  width: 100%;
-  height: 60px;
-  margin-top: 0.5em;
-}
-
-img {
-  max-width: 100%;
-  height: auto;
-  margin-top: 0.5em;
-  border-radius: 6px;
-}
-
-button {
-  margin-top: 0.5em;
+.store-item input[type="checkbox"] {
+  margin-right: 8px;
 }
