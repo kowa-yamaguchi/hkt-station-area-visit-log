@@ -1,124 +1,112 @@
-const shops = [
-  { name: "とんかつ浜勝", building: "くうてん", floor: "10F" },
-  { name: "五穀", building: "くうてん", floor: "10F" },
-  { name: "一蘭", building: "アミュプラザ博多", floor: "B1F" },
-  { name: "ラーメン海鳴", building: "アミュプラザ博多", floor: "10F" },
-  { name: "すしざんまい", building: "博多阪急", floor: "B1F" },
-  { name: "資さんうどん", building: "KITTE", floor: "B1F" }, // 仮に表示。不要なら削除
-  { name: "だるま", building: "マルイ", floor: "2F" },
-  // ...必要に応じてさらに店舗を追加
+const stores = [
+  { name: "しらすくじら", building: "くうてん", genre: "和食" },
+  { name: "うまや", building: "くうてん", genre: "居酒屋" },
+  { name: "一風堂", building: "アミュプラザ博多", genre: "ラーメン" },
+  { name: "やまや", building: "KITTE博多", genre: "定食" },
+  { name: "すけさんうどん", building: "マルイ博多", genre: "うどん" },
+  { name: "資さんうどん", building: "マルイ博多", genre: "うどん" },
+  // ← このあと100店舗以上、順次追加予定
 ];
 
-const list = document.getElementById("shopList");
-const buildingFilter = document.getElementById("buildingFilter");
-const floorFilter = document.getElementById("floorFilter");
+const storeList = document.getElementById("storeList");
+const filter = document.getElementById("buildingFilter");
 
 function loadVisited() {
-  return JSON.parse(localStorage.getItem("visitedShops") || "{}");
+  return JSON.parse(localStorage.getItem("visitedStores") || "{}");
 }
 
 function saveVisited(data) {
-  localStorage.setItem("visitedShops", JSON.stringify(data));
+  localStorage.setItem("visitedStores", JSON.stringify(data));
 }
 
-function renderList() {
+function renderStores() {
   const visited = loadVisited();
-  list.innerHTML = "";
+  const selected = filter.value;
+  storeList.innerHTML = "";
 
-  shops.forEach((shop, index) => {
-    if (
-      (buildingFilter.value && buildingFilter.value !== shop.building) ||
-      (floorFilter.value && floorFilter.value !== shop.floor)
-    ) {
-      return;
-    }
+  stores.forEach((store, i) => {
+    if (selected !== "all" && store.building !== selected) return;
 
     const li = document.createElement("li");
-    li.className = visited[shop.name] ? "visited" : "";
+    li.className = "store-item";
+    if (visited[store.name]) li.classList.add("visited");
 
-    const title = document.createElement("div");
-    title.className = "shop-title";
-    title.innerText = `[${shop.floor}][${shop.building}] ${shop.name}`;
-    title.onclick = () => {
-      detail.style.display = detail.style.display === "none" ? "block" : "none";
-    };
+    const header = document.createElement("div");
+    header.className = "store-header";
 
-    const detail = document.createElement("div");
-    detail.className = "shop-detail";
-    detail.style.display = "none";
+    const name = document.createElement("div");
+    name.className = "store-name";
+    name.textContent = `【${store.building}】${store.name}`;
+    header.appendChild(name);
 
-    const memo = document.createElement("textarea");
-    memo.placeholder = "メモを入力";
-    memo.value = visited[shop.name]?.memo || "";
-    memo.onchange = () => {
-      visited[shop.name] = visited[shop.name] || {};
-      visited[shop.name].memo = memo.value;
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = !!visited[store.name];
+    checkbox.onchange = () => {
+      visited[store.name] = checkbox.checked;
       saveVisited(visited);
+      renderStores();
     };
+    header.appendChild(checkbox);
+    li.appendChild(header);
+
+    const details = document.createElement("div");
+    details.className = "store-details";
+
+    const note = document.createElement("textarea");
+    note.placeholder = "メモを入力...";
+    note.value = localStorage.getItem(`note_${store.name}`) || "";
+    note.oninput = () => {
+      localStorage.setItem(`note_${store.name}`, note.value);
+    };
+    details.appendChild(note);
 
     const link = document.createElement("a");
-    link.href = `https://www.google.com/search?q=${encodeURIComponent(shop.name + " 博多")}`;
+    link.href = `https://www.google.com/search?q=${encodeURIComponent(store.name + " 博多")}`;
+    link.textContent = "Googleで検索";
     link.target = "_blank";
-    link.innerText = "Googleで検索";
+    link.style.display = "block";
+    link.style.marginTop = "0.5em";
+    details.appendChild(link);
 
-    const photoInput = document.createElement("input");
-    photoInput.type = "file";
-    photoInput.accept = "image/*";
-    photoInput.onchange = (e) => {
+    const photo = document.createElement("input");
+    photo.type = "file";
+    photo.accept = "image/*";
+    photo.onchange = (e) => {
       const file = e.target.files[0];
+      if (!file) return;
       const reader = new FileReader();
       reader.onload = () => {
-        visited[shop.name] = visited[shop.name] || {};
-        visited[shop.name].photo = reader.result;
-        saveVisited(visited);
-        renderList();
+        localStorage.setItem(`img_${store.name}`, reader.result);
+        renderStores();
       };
       reader.readAsDataURL(file);
     };
+    details.appendChild(photo);
 
-    const img = document.createElement("img");
-    img.src = visited[shop.name]?.photo || "";
-    img.alt = "";
-    if (!img.src) img.style.display = "none";
+    const savedImage = localStorage.getItem(`img_${store.name}`);
+    if (savedImage) {
+      const img = document.createElement("img");
+      img.src = savedImage;
+      details.appendChild(img);
 
-    const deleteBtn = document.createElement("button");
-    deleteBtn.innerText = "写真を削除";
-    deleteBtn.onclick = () => {
-      if (visited[shop.name]) {
-        delete visited[shop.name].photo;
-        saveVisited(visited);
-        renderList();
-      }
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "写真を削除";
+      delBtn.onclick = () => {
+        localStorage.removeItem(`img_${store.name}`);
+        renderStores();
+      };
+      details.appendChild(delBtn);
+    }
+
+    name.onclick = () => {
+      details.style.display = details.style.display === "block" ? "none" : "block";
     };
 
-    const toggleVisitBtn = document.createElement("button");
-    toggleVisitBtn.innerText = visited[shop.name] ? "未訪問にする" : "訪問済みにする";
-    toggleVisitBtn.onclick = () => {
-      if (visited[shop.name]) {
-        delete visited[shop.name];
-      } else {
-        visited[shop.name] = {};
-      }
-      saveVisited(visited);
-      renderList();
-    };
-
-    detail.appendChild(memo);
-    detail.appendChild(document.createElement("br"));
-    detail.appendChild(link);
-    detail.appendChild(document.createElement("br"));
-    detail.appendChild(photoInput);
-    detail.appendChild(img);
-    detail.appendChild(deleteBtn);
-    detail.appendChild(document.createElement("br"));
-    detail.appendChild(toggleVisitBtn);
-
-    li.appendChild(title);
-    li.appendChild(detail);
-    list.appendChild(li);
+    li.appendChild(details);
+    storeList.appendChild(li);
   });
 }
 
-buildingFilter.onchange = renderList;
-floorFilter.onchange = renderList;
-window.onload = renderList;
+filter.onchange = renderStores;
+renderStores();
