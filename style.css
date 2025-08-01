@@ -18,16 +18,14 @@ h1 {
   padding: 0;
 }
 
-.store-item {
-  border: 1px solid #ccc;
-  background: #fff;
-  margin-bottom: 1em;
-  padding: 1em;
-  border-radius: 8px;
+.store-item.visited {
+  background-color: #fff8d6;  /* 明るい黄色で目立つように */
+  border-color: #f2c94c;
 }
 
-.store-item.visited {
-  background-color: #d0f0c0;
+.store-item.visited .store-name {
+  color: #b17f00;  /* 濃い黄色系の文字 */
+  font-weight: bold;
 }
 
 .store-header {
