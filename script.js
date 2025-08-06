@@ -187,84 +187,85 @@ const restaurants = [
   { place: "博多バスターミナル", floor: "8", genre: "焼きそば", name: "バソキ屋" }
 ];
 
-function createRestaurantElement(restaurant) {
+function populateFilters() {
+  const placeSet = new Set();
+  const floorSet = new Set();
+  const genreSet = new Set();
+
+  restaurants.forEach(r => {
+    if (r.place) placeSet.add(r.place);
+    if (r.floor) floorSet.add(r.floor);
+    if (r.genre) genreSet.add(r.genre);
+  });
+
+  addOptions("placeFilter", [...placeSet].sort());
+  addOptions("floorFilter", [...floorSet].sort());
+  addOptions("genreFilter", [...genreSet].sort());
+}
+
+function addOptions(selectId, options) {
+  const select = document.getElementById(selectId);
+  options.forEach(opt => {
+    const option = document.createElement("option");
+    option.value = opt;
+    option.textContent = opt;
+    select.appendChild(option);
+  });
+}
+
+function createRestaurantElement(r) {
   const li = document.createElement("li");
   li.className = "restaurant";
-
-  const visited = localStorage.getItem(`visited_${restaurant.name}`) === "true";
-  if (visited) li.classList.add("visited");
-
   li.innerHTML = `
-    <h2>${restaurant.name}</h2>
-    <p><strong>場所:</strong> ${restaurant.place}</p>
-    <p><strong>階数:</strong> ${restaurant.floor}</p>
-    <p><strong>ジャンル:</strong> ${restaurant.genre || "未分類"}</p>
-    <button class="toggleMemo">詳細表示</button>
-    <div class="details" style="display: none;">
-      <textarea class="memo" placeholder="メモを入力">${localStorage.getItem(`memo_${restaurant.name}`) || ""}</textarea>
-      <br>
-      <label class="photo-label">写真を選択:
-        <input type="file" class="photoInput" accept="image/*">
-      </label>
-      <img class="photo" src="${localStorage.getItem(`photo_${restaurant.name}`) || ""}" alt="" />
-      <br>
-      <a href="https://www.google.com/search?q=${encodeURIComponent(restaurant.name)}" target="_blank">Googleで検索</a>
-      <br>
-      <button class="visitToggle">${visited ? "訪問済み取消" : "訪問済みにする"}</button>
-    </div>
+    <h3>${r.name}</h3>
+    <p>場所: ${r.place} ／ 階: ${r.floor} ／ ジャンル: ${r.genre || "未分類"}</p>
   `;
-
-  const toggleBtn = li.querySelector(".toggleMemo");
-  const detailDiv = li.querySelector(".details");
-  toggleBtn.onclick = () => {
-    detailDiv.style.display = detailDiv.style.display === "none" ? "block" : "none";
-  };
-
-  const memoArea = li.querySelector(".memo");
-  memoArea.oninput = () => {
-    localStorage.setItem(`memo_${restaurant.name}`, memoArea.value);
-  };
-
-  const visitToggle = li.querySelector(".visitToggle");
-  visitToggle.onclick = () => {
-    const nowVisited = localStorage.getItem(`visited_${restaurant.name}`) === "true";
-    localStorage.setItem(`visited_${restaurant.name}`, !nowVisited);
+  li.addEventListener("click", () => {
     li.classList.toggle("visited");
-    visitToggle.textContent = !nowVisited ? "訪問済み取消" : "訪問済みにする";
-  };
+    saveVisited(r.name, li.classList.contains("visited"));
+  });
 
-  const photoInput = li.querySelector(".photoInput");
-  const photoImg = li.querySelector(".photo");
-  photoInput.onchange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result;
-      localStorage.setItem(`photo_${restaurant.name}`, dataUrl);
-      photoImg.src = dataUrl;
-    };
-    reader.readAsDataURL(file);
-  };
+  // 初期状態に反映
+  if (getVisited(r.name)) {
+    li.classList.add("visited");
+  }
 
   return li;
 }
 
-function renderRestaurants(list) {
-  const ul = document.getElementById("restaurantList");
-  ul.innerHTML = "";
-  list.forEach(r => ul.appendChild(createRestaurantElement(r)));
+function displayRestaurants() {
+  const list = document.getElementById("restaurantList");
+  list.innerHTML = "";
+
+  const selectedPlace = document.getElementById("placeFilter").value;
+  const selectedFloor = document.getElementById("floorFilter").value;
+  const selectedGenre = document.getElementById("genreFilter").value;
+
+  restaurants
+    .filter(r =>
+      (!selectedPlace || r.place === selectedPlace) &&
+      (!selectedFloor || r.floor === selectedFloor) &&
+      (!selectedGenre || r.genre === selectedGenre)
+    )
+    .forEach(r => {
+      list.appendChild(createRestaurantElement(r));
+    });
 }
 
-document.getElementById("searchInput").addEventListener("input", (e) => {
-  const keyword = e.target.value.toLowerCase();
-  const filtered = restaurants.filter(r =>
-    r.name.toLowerCase().includes(keyword) ||
-    (r.place && r.place.toLowerCase().includes(keyword)) ||
-    (r.genre && r.genre.toLowerCase().includes(keyword))
-  );
-  renderRestaurants(filtered);
-});
+function saveVisited(name, visited) {
+  const visitedData = JSON.parse(localStorage.getItem("visitedStores") || "{}");
+  visitedData[name] = visited;
+  localStorage.setItem("visitedStores", JSON.stringify(visitedData));
+}
 
-// 初期描画（全店舗表示）
-renderRestaurants(restaurants);
+function getVisited(name) {
+  const visitedData = JSON.parse(localStorage.getItem("visitedStores") || "{}");
+  return visitedData[name];
+}
+
+document.getElementById("placeFilter").addEventListener("change", displayRestaurants);
+document.getElementById("floorFilter").addEventListener("change", displayRestaurants);
+document.getElementById("genreFilter").addEventListener("change", displayRestaurants);
+
+populateFilters();
+displayRestaurants();
