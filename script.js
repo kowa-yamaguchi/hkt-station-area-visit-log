@@ -228,12 +228,18 @@ function createRestaurantElement(r) {
     </div>
   `;
 
-  // 訪問済み状態の復元
   if (getVisited(r.name)) {
     li.classList.add("visited");
   }
 
   li.addEventListener("click", (e) => {
+    if (e.target.tagName === "BUTTON" && e.target.classList.contains("delete-photo")) {
+      const name = e.target.getAttribute("data-name");
+      deletePhoto(name);
+      li.querySelector(".photo").innerHTML = "";
+      return;
+    }
+
     if (e.target.tagName !== "TEXTAREA" && e.target.tagName !== "INPUT") {
       li.classList.toggle("visited");
       saveVisited(r.name, li.classList.contains("visited"));
@@ -255,29 +261,13 @@ function createRestaurantElement(r) {
 
     const reader = new FileReader();
     reader.onload = () => {
-      const img = `<img src="${reader.result}" alt="写真">`;
-      li.querySelector(".photo").innerHTML = img;
+      const imgHTML = `<img src="${reader.result}" alt="写真"><br>
+                       <button class="delete-photo" data-name="${r.name}">写真を削除</button>`;
+      li.querySelector(".photo").innerHTML = imgHTML;
       savePhoto(r.name, reader.result);
     };
     reader.readAsDataURL(file);
   });
-
-li.addEventListener("click", (e) => {
-  if (e.target.tagName === "BUTTON" && e.target.classList.contains("delete-photo")) {
-    const name = e.target.getAttribute("data-name");
-    deletePhoto(name);
-    li.querySelector(".photo").innerHTML = "";
-    return; // 他のクリックイベントと重ならないように return
-  }
-
-  if (e.target.tagName !== "TEXTAREA" && e.target.tagName !== "INPUT") {
-    li.classList.toggle("visited");
-    saveVisited(r.name, li.classList.contains("visited"));
-
-    const extra = li.querySelector(".extra");
-    extra.style.display = extra.style.display === "none" ? "block" : "none";
-  }
-});
 
   return li;
 }
@@ -301,7 +291,7 @@ function displayRestaurants() {
     });
 }
 
-// LocalStorage：訪問済み・メモ・写真
+// LocalStorage 保存系
 function saveVisited(name, visited) {
   const data = JSON.parse(localStorage.getItem("visitedStores") || "{}");
   data[name] = visited;
@@ -331,17 +321,16 @@ function getPhoto(name) {
   const data = JSON.parse(localStorage.getItem("storePhotos") || "{}");
   if (data[name]) {
     return `
-      <img src="${data[name]}" alt="写真">
-      <br>
+      <img src="${data[name]}" alt="写真"><br>
       <button class="delete-photo" data-name="${name}">写真を削除</button>
     `;
   }
+  return "";
+}
 function deletePhoto(name) {
   const data = JSON.parse(localStorage.getItem("storePhotos") || "{}");
   delete data[name];
   localStorage.setItem("storePhotos", JSON.stringify(data));
-}
-  return "";
 }
 
 document.getElementById("placeFilter").addEventListener("change", displayRestaurants);
