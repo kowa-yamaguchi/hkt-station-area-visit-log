@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>博多駅エリア来店記録</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>博多駅エリア来店記録</h1>
+
+  <div class="filters">
+    <label>場所:
+      <select id="location-filter">
+        <option value="">すべて</option>
+      </select>
+    </label>
+    <label>階数:
+      <select id="floor-filter">
+        <option value="">すべて</option>
+      </select>
+    </label>
+    <label>ジャンル:
+      <select id="genre-filter">
+        <option value="">すべて</option>
+      </select>
+    </label>
+  </div>
+
+  <div id="restaurant-list"></div>
+
+  <!-- ✅ PapaParse CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
