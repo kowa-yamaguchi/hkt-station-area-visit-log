@@ -219,16 +219,48 @@ function createRestaurantElement(r) {
   li.innerHTML = `
     <h3>${r.name}</h3>
     <p>場所: ${r.place} ／ 階: ${r.floor} ／ ジャンル: ${r.genre || "未分類"}</p>
+    <div class="extra" style="display: none;">
+      <textarea placeholder="メモを入力">${getMemo(r.name)}</textarea>
+      <br>
+      <input type="file" accept="image/*">
+      <div class="photo">${getPhoto(r.name)}</div>
+      <p><a href="https://www.google.com/search?q=${encodeURIComponent(r.name)}" target="_blank">Googleで検索</a></p>
+    </div>
   `;
-  li.addEventListener("click", () => {
-    li.classList.toggle("visited");
-    saveVisited(r.name, li.classList.contains("visited"));
-  });
 
-  // 初期状態に反映
+  // 訪問済み状態の復元
   if (getVisited(r.name)) {
     li.classList.add("visited");
   }
+
+  li.addEventListener("click", (e) => {
+    if (e.target.tagName !== "TEXTAREA" && e.target.tagName !== "INPUT") {
+      li.classList.toggle("visited");
+      saveVisited(r.name, li.classList.contains("visited"));
+
+      const extra = li.querySelector(".extra");
+      extra.style.display = extra.style.display === "none" ? "block" : "none";
+    }
+  });
+
+  const textarea = li.querySelector("textarea");
+  textarea.addEventListener("input", () => {
+    saveMemo(r.name, textarea.value);
+  });
+
+  const fileInput = li.querySelector("input[type='file']");
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = `<img src="${reader.result}" alt="写真">`;
+      li.querySelector(".photo").innerHTML = img;
+      savePhoto(r.name, reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
 
   return li;
 }
@@ -252,15 +284,35 @@ function displayRestaurants() {
     });
 }
 
+// LocalStorage：訪問済み・メモ・写真
 function saveVisited(name, visited) {
-  const visitedData = JSON.parse(localStorage.getItem("visitedStores") || "{}");
-  visitedData[name] = visited;
-  localStorage.setItem("visitedStores", JSON.stringify(visitedData));
+  const data = JSON.parse(localStorage.getItem("visitedStores") || "{}");
+  data[name] = visited;
+  localStorage.setItem("visitedStores", JSON.stringify(data));
+}
+function getVisited(name) {
+  const data = JSON.parse(localStorage.getItem("visitedStores") || "{}");
+  return data[name];
 }
 
-function getVisited(name) {
-  const visitedData = JSON.parse(localStorage.getItem("visitedStores") || "{}");
-  return visitedData[name];
+function saveMemo(name, text) {
+  const data = JSON.parse(localStorage.getItem("storeMemos") || "{}");
+  data[name] = text;
+  localStorage.setItem("storeMemos", JSON.stringify(data));
+}
+function getMemo(name) {
+  const data = JSON.parse(localStorage.getItem("storeMemos") || "{}");
+  return data[name] || "";
+}
+
+function savePhoto(name, dataURL) {
+  const data = JSON.parse(localStorage.getItem("storePhotos") || "{}");
+  data[name] = dataURL;
+  localStorage.setItem("storePhotos", JSON.stringify(data));
+}
+function getPhoto(name) {
+  const data = JSON.parse(localStorage.getItem("storePhotos") || "{}");
+  return data[name] ? `<img src="${data[name]}" alt="写真">` : "";
 }
 
 document.getElementById("placeFilter").addEventListener("change", displayRestaurants);
