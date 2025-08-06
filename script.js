@@ -262,6 +262,23 @@ function createRestaurantElement(r) {
     reader.readAsDataURL(file);
   });
 
+li.addEventListener("click", (e) => {
+  if (e.target.tagName === "BUTTON" && e.target.classList.contains("delete-photo")) {
+    const name = e.target.getAttribute("data-name");
+    deletePhoto(name);
+    li.querySelector(".photo").innerHTML = "";
+    return; // 他のクリックイベントと重ならないように return
+  }
+
+  if (e.target.tagName !== "TEXTAREA" && e.target.tagName !== "INPUT") {
+    li.classList.toggle("visited");
+    saveVisited(r.name, li.classList.contains("visited"));
+
+    const extra = li.querySelector(".extra");
+    extra.style.display = extra.style.display === "none" ? "block" : "none";
+  }
+});
+
   return li;
 }
 
@@ -312,7 +329,19 @@ function savePhoto(name, dataURL) {
 }
 function getPhoto(name) {
   const data = JSON.parse(localStorage.getItem("storePhotos") || "{}");
-  return data[name] ? `<img src="${data[name]}" alt="写真">` : "";
+  if (data[name]) {
+    return `
+      <img src="${data[name]}" alt="写真">
+      <br>
+      <button class="delete-photo" data-name="${name}">写真を削除</button>
+    `;
+  }
+function deletePhoto(name) {
+  const data = JSON.parse(localStorage.getItem("storePhotos") || "{}");
+  delete data[name];
+  localStorage.setItem("storePhotos", JSON.stringify(data));
+}
+  return "";
 }
 
 document.getElementById("placeFilter").addEventListener("change", displayRestaurants);
