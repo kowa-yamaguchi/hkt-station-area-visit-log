@@ -1,28 +1,17 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>博多駅エリア来店記録</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>博多駅エリア来店記録</h1>
-  </header>
+  <h1>博多駅エリア来店記録</h1>
 
-  <div class="filters">
-    <select id="buildingFilter">
-      <option value="all">全ての建物</option>
-      <option value="くうてん">くうてん</option>
-      <option value="アミュプラザ">アミュプラザ</option>
-      <option value="博多阪急">博多阪急</option>
-      <option value="KITTE">KITTE</option>
-      <option value="マルイ">マルイ</option>
-    </select>
-  </div>
+  <input type="text" id="searchInput" placeholder="店舗名・ジャンル・場所で検索">
 
-  <ul id="storeList" class="store-list"></ul>
+  <ul id="restaurantList"></ul>
 
   <script src="script.js"></script>
 </body>
