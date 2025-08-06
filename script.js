@@ -1,125 +1,149 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const restaurantList = document.getElementById('restaurant-list');
-  const locationFilter = document.getElementById('location-filter');
-  const floorFilter = document.getElementById('floor-filter');
-  const genreFilter = document.getElementById('genre-filter');
+document.addEventListener("DOMContentLoaded", () => {
+  const container = document.getElementById("restaurant-list");
+  const filters = {
+    place: document.getElementById("place-filter"),
+    floor: document.getElementById("floor-filter"),
+    genre: document.getElementById("genre-filter")
+  };
 
-  let allRestaurants = [];
+  // ユニークな値を収集してフィルターに追加
+  const restaurants = window.restaurantData || [];
+  const places = new Set();
+  const floors = new Set();
+  const genres = new Set();
 
-  // ✅ CSVファイルのURL（GitHub Pages上）
-  const CSV_URL = 'restaurants.csv'; // または絶対URL
-
-  Papa.parse(CSV_URL, {
-    download: true,
-    header: true,
-    complete: function(results) {
-      allRestaurants = results.data.filter(row => row.店名); // 空行除外
-      populateFilters(allRestaurants);
-      renderRestaurants(allRestaurants);
-    }
+  restaurants.forEach(r => {
+    places.add(r.place);
+    floors.add(r.floor);
+    genres.add(r.genre);
   });
 
-  // ✅ プルダウンに選択肢を追加
-  function populateFilters(data) {
-    const locations = [...new Set(data.map(r => r.場所).filter(Boolean))];
-    const floors = [...new Set(data.map(r => r.階数).filter(Boolean))];
-    const genres = [...new Set(data.map(r => r.ジャンル).filter(Boolean))];
-
-    locations.sort().forEach(loc => {
-      locationFilter.innerHTML += `<option value="${loc}">${loc}</option>`;
-    });
-    floors.sort().forEach(floor => {
-      floorFilter.innerHTML += `<option value="${floor}">${floor}</option>`;
-    });
-    genres.sort().forEach(gen => {
-      genreFilter.innerHTML += `<option value="${gen}">${gen}</option>`;
+  function populateFilter(selectElement, values) {
+    selectElement.innerHTML = `<option value="">すべて</option>`;
+    [...values].sort().forEach(value => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      selectElement.appendChild(option);
     });
   }
 
-  // ✅ 店舗リストを描画
-  function renderRestaurants(data) {
-    restaurantList.innerHTML = '';
-    data.forEach((store, index) => {
-      const id = `${store.場所}_${store.階数}_${store.ジャンル}_${store.店名}`.replace(/\s+/g, '_');
-      const visited = localStorage.getItem(`visited_${id}`) === 'true';
-      const memo = localStorage.getItem(`memo_${id}`) || '';
-      const imageData = localStorage.getItem(`image_${id}`);
+  populateFilter(filters.place, places);
+  populateFilter(filters.floor, floors);
+  populateFilter(filters.genre, genres);
 
-      const div = document.createElement('div');
-      div.className = `restaurant-item ${visited ? 'visited' : ''}`;
-      div.innerHTML = `
-        <div class="main-info">
-          <strong>${store.店名}</strong>（${store.ジャンル}／${store.場所} ${store.階数}F）
-        </div>
-        <div class="details" style="display:none;">
-          <textarea placeholder="メモを入力" data-id="${id}">${memo}</textarea>
-          <div>
-            <input type="file" accept="image/*" data-id="${id}" />
-            ${imageData ? `<img src="${imageData}" class="preview" /><button class="delete-image" data-id="${id}">写真削除</button>` : ''}
-          </div>
-          <a href="https://www.google.com/search?q=${encodeURIComponent(store.店名)}" target="_blank">Googleで検索</a>
-        </div>
-      `;
-      div.addEventListener('click', () => {
-        div.classList.toggle('visited');
-        const newStatus = div.classList.contains('visited');
-        localStorage.setItem(`visited_${id}`, newStatus);
-        const detail = div.querySelector('.details');
-        detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
-      });
-      restaurantList.appendChild(div);
-    });
-    attachEventListeners();
+  function saveToLocalStorage(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
   }
 
-  // ✅ 絞り込み処理
-  function applyFilters() {
-    const location = locationFilter.value;
-    const floor = floorFilter.value;
-    const genre = genreFilter.value;
-    const filtered = allRestaurants.filter(r => {
-      return (!location || r.場所 === location) &&
-             (!floor || r.階数 === floor) &&
-             (!genre || r.ジャンル === genre);
-    });
-    renderRestaurants(filtered);
+  function loadFromLocalStorage(key, defaultValue) {
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : defaultValue;
   }
 
-  locationFilter.addEventListener('change', applyFilters);
-  floorFilter.addEventListener('change', applyFilters);
-  genreFilter.addEventListener('change', applyFilters);
+  const visited = loadFromLocalStorage("visited", {});
+  const memos = loadFromLocalStorage("memos", {});
+  const images = loadFromLocalStorage("images", {});
 
-  // ✅ イベント再付与（画像、メモ、削除）
-  function attachEventListeners() {
-    document.querySelectorAll('textarea').forEach(area => {
-      area.addEventListener('input', (e) => {
-        const id = e.target.dataset.id;
-        localStorage.setItem(`memo_${id}`, e.target.value);
-      });
+  function createRestaurantElement(restaurant, index) {
+    const div = document.createElement("div");
+    div.className = "restaurant";
+    if (visited[index]) div.classList.add("visited");
+
+    const header = document.createElement("div");
+    header.className = "restaurant-header";
+    header.innerHTML = `<span>${restaurant.place} ${restaurant.floor}F｜${restaurant.genre}｜${restaurant.name}</span>`;
+
+    const content = document.createElement("div");
+    content.className = "restaurant-content";
+
+    const memoInput = document.createElement("textarea");
+    memoInput.placeholder = "メモを入力";
+    memoInput.value = memos[index] || "";
+    memoInput.addEventListener("input", (e) => {
+      memos[index] = e.target.value;
+      saveToLocalStorage("memos", memos);
     });
 
-    document.querySelectorAll('input[type="file"]').forEach(input => {
-      input.addEventListener('change', (e) => {
-        const id = e.target.dataset.id;
-        const file = e.target.files[0];
-        if (file && file.type.startsWith('image/')) {
-          const reader = new FileReader();
-          reader.onload = function(event) {
-            localStorage.setItem(`image_${id}`, event.target.result);
-            applyFilters(); // 再描画して反映
-          };
-          reader.readAsDataURL(file);
-        }
-      });
+    const searchLink = document.createElement("a");
+    searchLink.href = `https://www.google.com/search?q=${encodeURIComponent(restaurant.name)}`;
+    searchLink.textContent = "Googleで検索";
+    searchLink.target = "_blank";
+
+    const imageInput = document.createElement("input");
+    imageInput.type = "file";
+    imageInput.accept = "image/*";
+    imageInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        images[index] = reader.result;
+        saveToLocalStorage("images", images);
+        imagePreview.src = reader.result;
+        imagePreview.style.display = "block";
+        deleteBtn.style.display = "inline";
+      };
+      reader.readAsDataURL(file);
     });
 
-    document.querySelectorAll('.delete-image').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = e.target.dataset.id;
-        localStorage.removeItem(`image_${id}`);
-        applyFilters(); // 再描画
-      });
+    const imagePreview = document.createElement("img");
+    imagePreview.src = images[index] || "";
+    imagePreview.style.display = images[index] ? "block" : "none";
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "写真を削除";
+    deleteBtn.style.display = images[index] ? "inline" : "none";
+    deleteBtn.addEventListener("click", () => {
+      delete images[index];
+      saveToLocalStorage("images", images);
+      imagePreview.src = "";
+      imagePreview.style.display = "none";
+      deleteBtn.style.display = "none";
+    });
+
+    content.appendChild(memoInput);
+    content.appendChild(searchLink);
+    content.appendChild(imageInput);
+    content.appendChild(imagePreview);
+    content.appendChild(deleteBtn);
+
+    // 表示切り替え
+    header.addEventListener("click", (e) => {
+      if (e.target !== memoInput && !content.contains(e.target)) {
+        content.style.display = content.style.display === "block" ? "none" : "block";
+        visited[index] = !visited[index];
+        saveToLocalStorage("visited", visited);
+        div.classList.toggle("visited");
+      }
+    });
+
+    div.appendChild(header);
+    div.appendChild(content);
+    return div;
+  }
+
+  function renderRestaurants() {
+    container.innerHTML = "";
+    const placeValue = filters.place.value;
+    const floorValue = filters.floor.value;
+    const genreValue = filters.genre.value;
+
+    restaurants.forEach((restaurant, index) => {
+      if (
+        (!placeValue || restaurant.place === placeValue) &&
+        (!floorValue || restaurant.floor === floorValue) &&
+        (!genreValue || restaurant.genre === genreValue)
+      ) {
+        const restaurantEl = createRestaurantElement(restaurant, index);
+        container.appendChild(restaurantEl);
+      }
     });
   }
+
+  Object.values(filters).forEach(select => {
+    select.addEventListener("change", renderRestaurants);
+  });
+
+  renderRestaurants();
 });
