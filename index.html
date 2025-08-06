@@ -1,15 +1,27 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>博多駅エリア来店記録</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
   <h1>博多駅エリア来店記録</h1>
 
-  <input type="text" id="searchInput" placeholder="店舗名・ジャンル・場所で検索">
+  <div class="filters">
+    <select id="placeFilter">
+      <option value="">すべての場所</option>
+    </select>
+
+    <select id="floorFilter">
+      <option value="">すべての階数</option>
+    </select>
+
+    <select id="genreFilter">
+      <option value="">すべてのジャンル</option>
+    </select>
+  </div>
 
   <ul id="restaurantList"></ul>
 
