@@ -2,35 +2,43 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>博多駅エリア来店記録</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body>
   <h1>博多駅エリア来店記録</h1>
 
   <div class="filters">
-    <label>場所:
-      <select id="location-filter">
-        <option value="">すべて</option>
-      </select>
-    </label>
-    <label>階数:
-      <select id="floor-filter">
-        <option value="">すべて</option>
-      </select>
-    </label>
-    <label>ジャンル:
-      <select id="genre-filter">
-        <option value="">すべて</option>
-      </select>
-    </label>
+    <label for="placeFilter">場所:</label>
+    <select id="placeFilter"><option value="all">すべて</option></select>
+
+    <label for="floorFilter">階数:</label>
+    <select id="floorFilter"><option value="all">すべて</option></select>
+
+    <label for="genreFilter">ジャンル:</label>
+    <select id="genreFilter"><option value="all">すべて</option></select>
   </div>
 
-  <div id="restaurant-list"></div>
+  <div id="restaurantList" class="restaurant-list"></div>
 
-  <!-- ✅ PapaParse CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <template id="restaurantTemplate">
+    <div class="restaurant-card">
+      <div class="restaurant-header">
+        <h2 class="restaurant-name"></h2>
+        <p class="restaurant-meta"></p>
+      </div>
+      <div class="details">
+        <textarea class="memo" placeholder="メモを入力..."></textarea>
+        <input type="file" class="photo-upload" accept="image/*">
+        <div class="photo-preview"></div>
+        <button class="delete-photo-button">写真を削除</button>
+        <a class="google-search" href="#" target="_blank">Googleで検索</a>
+      </div>
+    </div>
+  </template>
+
   <script src="script.js"></script>
 </body>
 </html>
