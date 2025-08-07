@@ -1,149 +1,111 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const container = document.getElementById("restaurant-list");
-  const filters = {
-    place: document.getElementById("place-filter"),
-    floor: document.getElementById("floor-filter"),
-    genre: document.getElementById("genre-filter")
-  };
+  const listContainer = document.getElementById("restaurantList");
+  const template = document.getElementById("restaurantTemplate");
+  const placeFilter = document.getElementById("placeFilter");
+  const floorFilter = document.getElementById("floorFilter");
+  const genreFilter = document.getElementById("genreFilter");
 
-  // ユニークな値を収集してフィルターに追加
-  const restaurants = window.restaurantData || [];
-  const places = new Set();
-  const floors = new Set();
-  const genres = new Set();
+  fetch("restaurants.csv")
+    .then(response => response.text())
+    .then(csv => {
+      const data = Papa.parse(csv, { header: true }).data;
+      const places = new Set();
+      const floors = new Set();
+      const genres = new Set();
 
-  restaurants.forEach(r => {
-    places.add(r.place);
-    floors.add(r.floor);
-    genres.add(r.genre);
-  });
+      data.forEach((row, index) => {
+        if (!row["店名"]) return;
 
-  function populateFilter(selectElement, values) {
-    selectElement.innerHTML = `<option value="">すべて</option>`;
-    [...values].sort().forEach(value => {
-      const option = document.createElement("option");
-      option.value = value;
-      option.textContent = value;
-      selectElement.appendChild(option);
-    });
-  }
+        const card = template.content.cloneNode(true);
+        const container = card.querySelector(".restaurant-card");
+        const title = card.querySelector(".restaurant-name");
+        const meta = card.querySelector(".restaurant-meta");
+        const memo = card.querySelector(".memo");
+        const fileInput = card.querySelector(".photo-upload");
+        const photoPreview = card.querySelector(".photo-preview");
+        const deleteButton = card.querySelector(".delete-photo-button");
+        const googleLink = card.querySelector(".google-search");
 
-  populateFilter(filters.place, places);
-  populateFilter(filters.floor, floors);
-  populateFilter(filters.genre, genres);
+        const id = `${row["場所"]}_${row["階数"]}_${row["ジャンル"]}_${row["店名"]}`;
+        const visited = localStorage.getItem(`${id}_visited`) === "true";
+        const savedMemo = localStorage.getItem(`${id}_memo`);
+        const savedPhoto = localStorage.getItem(`${id}_photo`);
 
-  function saveToLocalStorage(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
-  }
+        title.textContent = row["店名"];
+        meta.textContent = `${row["場所"] || ""} / ${row["階数"] || ""} / ${row["ジャンル"] || ""}`;
+        googleLink.href = `https://www.google.com/search?q=${encodeURIComponent(row["店名"])}`;
+        memo.value = savedMemo || "";
 
-  function loadFromLocalStorage(key, defaultValue) {
-    const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : defaultValue;
-  }
+        if (visited) container.classList.add("visited");
+        if (savedPhoto) {
+          const img = document.createElement("img");
+          img.src = savedPhoto;
+          photoPreview.appendChild(img);
+        }
 
-  const visited = loadFromLocalStorage("visited", {});
-  const memos = loadFromLocalStorage("memos", {});
-  const images = loadFromLocalStorage("images", {});
+        title.addEventListener("click", () => {
+          container.classList.toggle("open");
+          container.classList.toggle("visited");
+          const isVisited = container.classList.contains("visited");
+          localStorage.setItem(`${id}_visited`, isVisited);
+        });
 
-  function createRestaurantElement(restaurant, index) {
-    const div = document.createElement("div");
-    div.className = "restaurant";
-    if (visited[index]) div.classList.add("visited");
+        memo.addEventListener("input", () => {
+          localStorage.setItem(`${id}_memo`, memo.value);
+        });
 
-    const header = document.createElement("div");
-    header.className = "restaurant-header";
-    header.innerHTML = `<span>${restaurant.place} ${restaurant.floor}F｜${restaurant.genre}｜${restaurant.name}</span>`;
+        fileInput.addEventListener("change", () => {
+          const file = fileInput.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = e => {
+              localStorage.setItem(`${id}_photo`, e.target.result);
+              photoPreview.innerHTML = `<img src="${e.target.result}" />`;
+            };
+            reader.readAsDataURL(file);
+          }
+        });
 
-    const content = document.createElement("div");
-    content.className = "restaurant-content";
+        deleteButton.addEventListener("click", () => {
+          localStorage.removeItem(`${id}_photo`);
+          photoPreview.innerHTML = "";
+        });
 
-    const memoInput = document.createElement("textarea");
-    memoInput.placeholder = "メモを入力";
-    memoInput.value = memos[index] || "";
-    memoInput.addEventListener("input", (e) => {
-      memos[index] = e.target.value;
-      saveToLocalStorage("memos", memos);
-    });
+        listContainer.appendChild(card);
 
-    const searchLink = document.createElement("a");
-    searchLink.href = `https://www.google.com/search?q=${encodeURIComponent(restaurant.name)}`;
-    searchLink.textContent = "Googleで検索";
-    searchLink.target = "_blank";
+        // フィルター用にセット
+        if (row["場所"]) places.add(row["場所"]);
+        if (row["階数"]) floors.add(row["階数"]);
+        if (row["ジャンル"]) genres.add(row["ジャンル"]);
+      });
 
-    const imageInput = document.createElement("input");
-    imageInput.type = "file";
-    imageInput.accept = "image/*";
-    imageInput.addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        images[index] = reader.result;
-        saveToLocalStorage("images", images);
-        imagePreview.src = reader.result;
-        imagePreview.style.display = "block";
-        deleteBtn.style.display = "inline";
+      // フィルター選択肢を作成
+      const makeOptions = (select, set) => {
+        [...set].sort().forEach(v => {
+          const option = document.createElement("option");
+          option.value = v;
+          option.textContent = v;
+          select.appendChild(option);
+        });
       };
-      reader.readAsDataURL(file);
+
+      makeOptions(placeFilter, places);
+      makeOptions(floorFilter, floors);
+      makeOptions(genreFilter, genres);
+
+      const applyFilters = () => {
+        const cards = listContainer.querySelectorAll(".restaurant-card");
+        cards.forEach(card => {
+          const meta = card.querySelector(".restaurant-meta").textContent;
+          const matchPlace = placeFilter.value === "all" || meta.includes(placeFilter.value);
+          const matchFloor = floorFilter.value === "all" || meta.includes(floorFilter.value);
+          const matchGenre = genreFilter.value === "all" || meta.includes(genreFilter.value);
+          card.style.display = (matchPlace && matchFloor && matchGenre) ? "" : "none";
+        });
+      };
+
+      [placeFilter, floorFilter, genreFilter].forEach(select => {
+        select.addEventListener("change", applyFilters);
+      });
     });
-
-    const imagePreview = document.createElement("img");
-    imagePreview.src = images[index] || "";
-    imagePreview.style.display = images[index] ? "block" : "none";
-
-    const deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "写真を削除";
-    deleteBtn.style.display = images[index] ? "inline" : "none";
-    deleteBtn.addEventListener("click", () => {
-      delete images[index];
-      saveToLocalStorage("images", images);
-      imagePreview.src = "";
-      imagePreview.style.display = "none";
-      deleteBtn.style.display = "none";
-    });
-
-    content.appendChild(memoInput);
-    content.appendChild(searchLink);
-    content.appendChild(imageInput);
-    content.appendChild(imagePreview);
-    content.appendChild(deleteBtn);
-
-    // 表示切り替え
-    header.addEventListener("click", (e) => {
-      if (e.target !== memoInput && !content.contains(e.target)) {
-        content.style.display = content.style.display === "block" ? "none" : "block";
-        visited[index] = !visited[index];
-        saveToLocalStorage("visited", visited);
-        div.classList.toggle("visited");
-      }
-    });
-
-    div.appendChild(header);
-    div.appendChild(content);
-    return div;
-  }
-
-  function renderRestaurants() {
-    container.innerHTML = "";
-    const placeValue = filters.place.value;
-    const floorValue = filters.floor.value;
-    const genreValue = filters.genre.value;
-
-    restaurants.forEach((restaurant, index) => {
-      if (
-        (!placeValue || restaurant.place === placeValue) &&
-        (!floorValue || restaurant.floor === floorValue) &&
-        (!genreValue || restaurant.genre === genreValue)
-      ) {
-        const restaurantEl = createRestaurantElement(restaurant, index);
-        container.appendChild(restaurantEl);
-      }
-    });
-  }
-
-  Object.values(filters).forEach(select => {
-    select.addEventListener("change", renderRestaurants);
-  });
-
-  renderRestaurants();
 });
