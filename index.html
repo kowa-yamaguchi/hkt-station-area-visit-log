@@ -1,50 +1,29 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>博多駅エリア来店記録</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <h1>博多駅エリア来店記録</h1>
 
   <div class="filters">
-    <label>場所:
-      <select id="placeFilter"></select>
-    </label>
-    <label>階数:
-      <select id="floorFilter"></select>
-    </label>
-    <label>ジャンル:
-      <select id="genreFilter"></select>
-    </label>
+    <select id="locationFilter">
+      <option value="">場所（全て）</option>
+    </select>
+    <select id="floorFilter">
+      <option value="">階数（全て）</option>
+    </select>
+    <select id="genreFilter">
+      <option value="">ジャンル（全て）</option>
+    </select>
   </div>
 
   <div id="restaurantList"></div>
 
-  <template id="restaurantTemplate">
-    <div class="restaurant-card">
-      <div class="restaurant-header">
-        <h2 class="restaurant-title"></h2>
-        <div class="visit-checkbox">
-          <label>
-            <input type="checkbox" class="visit-check" />
-            訪問済み
-          </label>
-        </div>
-      </div>
-      <div class="restaurant-details">
-        <p class="restaurant-info"></p>
-        <textarea class="restaurant-note" placeholder="メモを入力"></textarea>
-        <input type="file" accept="image/*" class="restaurant-image-input" />
-        <div class="restaurant-image-container"></div>
-        <a href="#" target="_blank" class="restaurant-link">Googleで検索</a>
-      </div>
-    </div>
-  </template>
-
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

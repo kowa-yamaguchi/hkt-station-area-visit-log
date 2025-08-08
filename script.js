@@ -1,114 +1,151 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const csvFilePath = "restaurants.csv";
+let restaurants = [];
+let filters = { location: "", floor: "", genre: "" };
 
-  Papa.parse(csvFilePath, {
-    header: true,
-    download: true,
-    complete: function (results) {
-      const data = results.data.filter(row => row["店名"]);
-      initApp(data);
-    }
-  });
+// CSV読み込み
+Papa.parse("restaurants.csv", {
+  download: true,
+  header: true,
+  complete: function(results) {
+    restaurants = results.data;
+    populateFilters();
+    renderList();
+  }
 });
 
-function initApp(data) {
-  const restaurantList = document.getElementById("restaurantList");
-  const template = document.getElementById("restaurantTemplate");
+function populateFilters() {
+  const locations = [...new Set(restaurants.map(r => r.場所).filter(Boolean))];
+  const floors = [...new Set(restaurants.map(r => r.階数).filter(Boolean))];
+  const genres = [...new Set(restaurants.map(r => r.ジャンル).filter(Boolean))];
 
-  const placeFilter = document.getElementById("placeFilter");
-  const floorFilter = document.getElementById("floorFilter");
-  const genreFilter = document.getElementById("genreFilter");
+  const locationSelect = document.getElementById("locationFilter");
+  locations.forEach(loc => {
+    const opt = document.createElement("option");
+    opt.value = loc;
+    opt.textContent = loc;
+    locationSelect.appendChild(opt);
+  });
 
-  const getUniqueValues = (field) => [...new Set(data.map(item => item[field]).filter(Boolean))];
-  const createOptions = (select, values) => {
-    select.innerHTML = `<option value="">すべて</option>`;
-    values.forEach(value => {
-      const option = document.createElement("option");
-      option.value = value;
-      option.textContent = value;
-      select.appendChild(option);
+  const floorSelect = document.getElementById("floorFilter");
+  floors.forEach(floor => {
+    const opt = document.createElement("option");
+    opt.value = floor;
+    opt.textContent = floor;
+    floorSelect.appendChild(opt);
+  });
+
+  const genreSelect = document.getElementById("genreFilter");
+  genres.forEach(genre => {
+    const opt = document.createElement("option");
+    opt.value = genre;
+    opt.textContent = genre;
+    genreSelect.appendChild(opt);
+  });
+
+  locationSelect.addEventListener("change", e => {
+    filters.location = e.target.value;
+    renderList();
+  });
+  floorSelect.addEventListener("change", e => {
+    filters.floor = e.target.value;
+    renderList();
+  });
+  genreSelect.addEventListener("change", e => {
+    filters.genre = e.target.value;
+    renderList();
+  });
+}
+
+function renderList() {
+  const list = document.getElementById("restaurantList");
+  list.innerHTML = "";
+
+  restaurants
+    .filter(r => (!filters.location || r.場所 === filters.location) &&
+                 (!filters.floor || r.階数 === filters.floor) &&
+                 (!filters.genre || r.ジャンル === filters.genre))
+    .forEach((r, index) => {
+      const key = `${r.場所}-${r.階数}-${r.店名}`;
+      const visited = localStorage.getItem(`visited-${key}`) === "true";
+      const memo = localStorage.getItem(`memo-${key}`) || "";
+      const photos = JSON.parse(localStorage.getItem(`photos-${key}`) || "[]");
+
+      const container = document.createElement("div");
+      container.className = "restaurant" + (visited ? " visited" : "");
+
+      const header = document.createElement("div");
+      header.className = "restaurant-header";
+      header.innerHTML = `<span>${r.店名} (${r.場所 || ""} ${r.階数 || ""} ${r.ジャンル || ""})</span>
+                          <input type="checkbox" ${visited ? "checked" : ""} title="訪問済み">`;
+      const checkbox = header.querySelector("input");
+      checkbox.addEventListener("click", e => {
+        e.stopPropagation();
+        localStorage.setItem(`visited-${key}`, e.target.checked);
+        renderList();
+      });
+
+      header.addEventListener("click", () => {
+        details.style.display = details.style.display === "block" ? "none" : "block";
+      });
+
+      const details = document.createElement("div");
+      details.className = "details";
+
+      // Google検索リンク
+      const googleLink = document.createElement("a");
+      googleLink.href = `https://www.google.com/search?q=${encodeURIComponent(r.店名)}`;
+      googleLink.target = "_blank";
+      googleLink.textContent = "Googleで検索";
+      details.appendChild(googleLink);
+
+      // メモ
+      const memoArea = document.createElement("textarea");
+      memoArea.value = memo;
+      memoArea.addEventListener("input", () => {
+        localStorage.setItem(`memo-${key}`, memoArea.value);
+      });
+      details.appendChild(memoArea);
+
+      // 画像追加
+      const photoInput = document.createElement("input");
+      photoInput.type = "file";
+      photoInput.accept = "image/*";
+      photoInput.addEventListener("change", e => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            photos.push(evt.target.result);
+            localStorage.setItem(`photos-${key}`, JSON.stringify(photos));
+            renderList();
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+      details.appendChild(photoInput);
+
+      // 画像プレビュー
+      const photoPreview = document.createElement("div");
+      photoPreview.className = "image-preview";
+      photos.forEach((src, idx) => {
+        const wrapper = document.createElement("div");
+        const img = document.createElement("img");
+        img.src = src;
+        const delBtn = document.createElement("button");
+        delBtn.className = "delete-photo";
+        delBtn.textContent = "×";
+        delBtn.addEventListener("click", () => {
+          photos.splice(idx, 1);
+          localStorage.setItem(`photos-${key}`, JSON.stringify(photos));
+          renderList();
+        });
+        wrapper.appendChild(img);
+        wrapper.appendChild(delBtn);
+        photoPreview.appendChild(wrapper);
+      });
+      details.appendChild(photoPreview);
+
+      container.appendChild(header);
+      container.appendChild(details);
+      list.appendChild(container);
     });
-  };
-
-  createOptions(placeFilter, getUniqueValues("場所"));
-  createOptions(floorFilter, getUniqueValues("階数"));
-  createOptions(genreFilter, getUniqueValues("ジャンル"));
-
-  const filters = [placeFilter, floorFilter, genreFilter];
-  filters.forEach(filter => filter.addEventListener("change", renderList));
-
-  function renderList() {
-    restaurantList.innerHTML = "";
-
-    data.forEach((item, index) => {
-      if (
-        (placeFilter.value && item["場所"] !== placeFilter.value) ||
-        (floorFilter.value && item["階数"] !== floorFilter.value) ||
-        (genreFilter.value && item["ジャンル"] !== genreFilter.value)
-      ) {
-        return;
-      }
-
-      const clone = template.content.cloneNode(true);
-      const card = clone.querySelector(".restaurant-card");
-      const title = clone.querySelector(".restaurant-title");
-      const info = clone.querySelector(".restaurant-info");
-      const note = clone.querySelector(".restaurant-note");
-      const imageInput = clone.querySelector(".restaurant-image-input");
-      const imageContainer = clone.querySelector(".restaurant-image-container");
-      const link = clone.querySelector(".restaurant-link");
-      const visitCheckbox = clone.querySelector(".visit-check");
-
-      const id = `restaurant_${index}`;
-      const savedNote = localStorage.getItem(`${id}_note`);
-      const savedImage = localStorage.getItem(`${id}_image`);
-      const visited = localStorage.getItem(`${id}_visited`) === "true";
-
-      title.textContent = item["店名"];
-      info.textContent = `${item["場所"] || ""} / ${item["階数"] || ""} / ${item["ジャンル"] || ""}`;
-      note.value = savedNote || "";
-      link.href = `https://www.google.com/search?q=${encodeURIComponent(item["店名"])}`;
-      visitCheckbox.checked = visited;
-
-      if (visited) card.classList.add("visited");
-
-      title.addEventListener("click", () => {
-        card.classList.toggle("open");
-      });
-
-      note.addEventListener("input", () => {
-        localStorage.setItem(`${id}_note`, note.value);
-      });
-
-      visitCheckbox.addEventListener("change", () => {
-        const isChecked = visitCheckbox.checked;
-        card.classList.toggle("visited", isChecked);
-        localStorage.setItem(`${id}_visited`, isChecked);
-      });
-
-      imageInput.addEventListener("change", () => {
-        const file = imageInput.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-          const img = new Image();
-          img.src = reader.result;
-          imageContainer.innerHTML = "";
-          imageContainer.appendChild(img);
-          localStorage.setItem(`${id}_image`, reader.result);
-        };
-        reader.readAsDataURL(file);
-      });
-
-      if (savedImage) {
-        const img = new Image();
-        img.src = savedImage;
-        imageContainer.appendChild(img);
-      }
-
-      restaurantList.appendChild(clone);
-    });
-  }
-
-  renderList();
 }
