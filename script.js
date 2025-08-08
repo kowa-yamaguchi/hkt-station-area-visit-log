@@ -1,151 +1,105 @@
-let restaurants = [];
-let filters = { location: "", floor: "", genre: "" };
+document.addEventListener("DOMContentLoaded", () => {
+  const restaurantList = document.getElementById("restaurantList");
+  const placeFilter = document.getElementById("placeFilter");
+  const floorFilter = document.getElementById("floorFilter");
+  const genreFilter = document.getElementById("genreFilter");
 
-// CSV読み込み
-Papa.parse("restaurants.csv", {
-  download: true,
-  header: true,
-  complete: function(results) {
-    restaurants = results.data;
-    populateFilters();
-    renderList();
+  Papa.parse("restaurants.csv", {
+    download: true,
+    header: true,
+    complete: (results) => {
+      const restaurants = results.data.filter(r => r.店名);
+      populateFilters(restaurants);
+      renderList(restaurants);
+
+      placeFilter.addEventListener("change", () => renderList(restaurants));
+      floorFilter.addEventListener("change", () => renderList(restaurants));
+      genreFilter.addEventListener("change", () => renderList(restaurants));
+    }
+  });
+
+  function populateFilters(data) {
+    const places = [...new Set(data.map(r => r.場所))];
+    const floors = [...new Set(data.map(r => r.階数))];
+    const genres = [...new Set(data.map(r => r.ジャンル))];
+
+    places.forEach(p => placeFilter.innerHTML += `<option value="${p}">${p}</option>`);
+    floors.forEach(f => floorFilter.innerHTML += `<option value="${f}">${f}</option>`);
+    genres.forEach(g => genreFilter.innerHTML += `<option value="${g}">${g}</option>`);
   }
-});
 
-function populateFilters() {
-  const locations = [...new Set(restaurants.map(r => r.場所).filter(Boolean))];
-  const floors = [...new Set(restaurants.map(r => r.階数).filter(Boolean))];
-  const genres = [...new Set(restaurants.map(r => r.ジャンル).filter(Boolean))];
+  function renderList(data) {
+    restaurantList.innerHTML = "";
+    const placeVal = placeFilter.value;
+    const floorVal = floorFilter.value;
+    const genreVal = genreFilter.value;
 
-  const locationSelect = document.getElementById("locationFilter");
-  locations.forEach(loc => {
-    const opt = document.createElement("option");
-    opt.value = loc;
-    opt.textContent = loc;
-    locationSelect.appendChild(opt);
-  });
+    data.filter(r =>
+      (!placeVal || r.場所 === placeVal) &&
+      (!floorVal || r.階数 === floorVal) &&
+      (!genreVal || r.ジャンル === genreVal)
+    ).forEach(r => {
+      const id = `${r.場所}-${r.階数}-${r.ジャンル}-${r.店名}`;
+      const visited = localStorage.getItem(`visited-${id}`) === "true";
+      const memo = localStorage.getItem(`memo-${id}`) || "";
+      const photo = localStorage.getItem(`photo-${id}`);
 
-  const floorSelect = document.getElementById("floorFilter");
-  floors.forEach(floor => {
-    const opt = document.createElement("option");
-    opt.value = floor;
-    opt.textContent = floor;
-    floorSelect.appendChild(opt);
-  });
+      const div = document.createElement("div");
+      div.className = `restaurant ${visited ? "visited" : ""}`;
+      div.innerHTML = `
+        <div class="restaurant-header">
+          <div class="restaurant-name">${r.店名} (${r.場所} ${r.階数} ${r.ジャンル})</div>
+          <div class="toggle-details">▼</div>
+        </div>
+        <div class="details">
+          <textarea placeholder="メモを入力">${memo}</textarea>
+          <br>
+          <input type="file" accept="image/*">
+          ${photo ? `<img src="${photo}" class="photo-preview"><button class="delete-photo">写真削除</button>` : ""}
+          <br>
+          <a href="https://www.google.com/search?q=${encodeURIComponent(r.店名)}" target="_blank">Googleで検索</a>
+        </div>
+      `;
 
-  const genreSelect = document.getElementById("genreFilter");
-  genres.forEach(genre => {
-    const opt = document.createElement("option");
-    opt.value = genre;
-    opt.textContent = genre;
-    genreSelect.appendChild(opt);
-  });
-
-  locationSelect.addEventListener("change", e => {
-    filters.location = e.target.value;
-    renderList();
-  });
-  floorSelect.addEventListener("change", e => {
-    filters.floor = e.target.value;
-    renderList();
-  });
-  genreSelect.addEventListener("change", e => {
-    filters.genre = e.target.value;
-    renderList();
-  });
-}
-
-function renderList() {
-  const list = document.getElementById("restaurantList");
-  list.innerHTML = "";
-
-  restaurants
-    .filter(r => (!filters.location || r.場所 === filters.location) &&
-                 (!filters.floor || r.階数 === filters.floor) &&
-                 (!filters.genre || r.ジャンル === filters.genre))
-    .forEach((r, index) => {
-      const key = `${r.場所}-${r.階数}-${r.店名}`;
-      const visited = localStorage.getItem(`visited-${key}`) === "true";
-      const memo = localStorage.getItem(`memo-${key}`) || "";
-      const photos = JSON.parse(localStorage.getItem(`photos-${key}`) || "[]");
-
-      const container = document.createElement("div");
-      container.className = "restaurant" + (visited ? " visited" : "");
-
-      const header = document.createElement("div");
-      header.className = "restaurant-header";
-      header.innerHTML = `<span>${r.店名} (${r.場所 || ""} ${r.階数 || ""} ${r.ジャンル || ""})</span>
-                          <input type="checkbox" ${visited ? "checked" : ""} title="訪問済み">`;
-      const checkbox = header.querySelector("input");
-      checkbox.addEventListener("click", e => {
-        e.stopPropagation();
-        localStorage.setItem(`visited-${key}`, e.target.checked);
-        renderList();
+      // 訪問済みトグル（店名クリック）
+      div.querySelector(".restaurant-name").addEventListener("click", () => {
+        div.classList.toggle("visited");
+        localStorage.setItem(`visited-${id}`, div.classList.contains("visited"));
       });
 
-      header.addEventListener("click", () => {
+      // アコーディオン開閉（右端アイコン）
+      div.querySelector(".toggle-details").addEventListener("click", () => {
+        const details = div.querySelector(".details");
         details.style.display = details.style.display === "block" ? "none" : "block";
       });
 
-      const details = document.createElement("div");
-      details.className = "details";
-
-      // Google検索リンク
-      const googleLink = document.createElement("a");
-      googleLink.href = `https://www.google.com/search?q=${encodeURIComponent(r.店名)}`;
-      googleLink.target = "_blank";
-      googleLink.textContent = "Googleで検索";
-      details.appendChild(googleLink);
-
-      // メモ
-      const memoArea = document.createElement("textarea");
-      memoArea.value = memo;
-      memoArea.addEventListener("input", () => {
-        localStorage.setItem(`memo-${key}`, memoArea.value);
+      // メモ保存
+      div.querySelector("textarea").addEventListener("input", e => {
+        localStorage.setItem(`memo-${id}`, e.target.value);
       });
-      details.appendChild(memoArea);
 
-      // 画像追加
-      const photoInput = document.createElement("input");
-      photoInput.type = "file";
-      photoInput.accept = "image/*";
-      photoInput.addEventListener("change", e => {
+      // 写真保存
+      div.querySelector("input[type='file']").addEventListener("change", e => {
         const file = e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = function(evt) {
-            photos.push(evt.target.result);
-            localStorage.setItem(`photos-${key}`, JSON.stringify(photos));
-            renderList();
-          };
-          reader.readAsDataURL(file);
-        }
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+          localStorage.setItem(`photo-${id}`, ev.target.result);
+          renderList(data); // 再描画して反映
+        };
+        reader.readAsDataURL(file);
       });
-      details.appendChild(photoInput);
 
-      // 画像プレビュー
-      const photoPreview = document.createElement("div");
-      photoPreview.className = "image-preview";
-      photos.forEach((src, idx) => {
-        const wrapper = document.createElement("div");
-        const img = document.createElement("img");
-        img.src = src;
-        const delBtn = document.createElement("button");
-        delBtn.className = "delete-photo";
-        delBtn.textContent = "×";
+      // 写真削除
+      const delBtn = div.querySelector(".delete-photo");
+      if (delBtn) {
         delBtn.addEventListener("click", () => {
-          photos.splice(idx, 1);
-          localStorage.setItem(`photos-${key}`, JSON.stringify(photos));
-          renderList();
+          localStorage.removeItem(`photo-${id}`);
+          renderList(data);
         });
-        wrapper.appendChild(img);
-        wrapper.appendChild(delBtn);
-        photoPreview.appendChild(wrapper);
-      });
-      details.appendChild(photoPreview);
+      }
 
-      container.appendChild(header);
-      container.appendChild(details);
-      list.appendChild(container);
+      restaurantList.appendChild(div);
     });
-}
+  }
+});
